@@ -1,7 +1,9 @@
 name: build_and_send
-description: A sample command-line application.
+description: A Dart package for building artifacts, upload and sending them.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/mariovtor/build_and_send
+homepage: https://github.com/mariovtor/build_and_send
+issue_tracker: https://github.com/mariovtor/build_and_send/issues
 
 environment:
   sdk: ^3.1.0
