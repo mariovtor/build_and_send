@@ -57,9 +57,8 @@ class Starter {
       return;
     }
 
-    final platform = 'android';
-    // argResults['platform'];
-    final flavor = 'dev'; // argResults['flavor'];
+    final platform = argResults['platform'];
+    final flavor = argResults['flavor'];
     final silent = argResults['silent'];
     final noMention = argResults['no-mention'];
     final mention =
