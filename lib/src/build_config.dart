@@ -30,9 +30,9 @@ class BuildConfig {
     }
 
     return BuildConfig(
-      method: yaml['method'] ?? 'default',
-      android: AndroidConfig.fromYaml(yaml['android'] ?? {}),
-      ios: IosConfig.fromYaml(yaml['ios'] ?? {}),
+      method: yaml['build']?['method'] ?? 'default',
+      android: AndroidConfig.fromYaml(yaml['build']?['android'] ?? {}),
+      ios: IosConfig.fromYaml(yaml['build']?['ios'] ?? {}),
       flavors: flavors,
       discord: DiscordConfig.fromYaml(yaml['discord'] ?? {}),
     );

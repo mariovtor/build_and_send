@@ -64,7 +64,7 @@ class Starter {
     final mention =
         argResults['mention']?.split(',')?.whereType<String>()?.toList();
     final verbose = argResults['verbose'];
-    final customText = argResults['text']?.toString();
+    final customText = (argResults['text'] ?? '').toString();
     final noPodSync = argResults.wasParsed('no-pod-sync') ? false : true;
 
     EnvLoader.load(envFile);
