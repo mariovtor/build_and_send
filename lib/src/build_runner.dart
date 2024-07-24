@@ -219,7 +219,8 @@ class BuildRunner {
 
     var uploadCommand =
         'xcrun altool --upload-app -f "build/ios/ipa/$ipaName" -t ios -u "$email" -p "$appSpecificPassword"';
-    await _runCommand(uploadCommand, onRun: (p0) {
+    await _runCommand(uploadCommand,
+        progressMessage: 'Uploading IPA to App Store Connect', onRun: (p0) {
       if (p0.exitCode == 0) {
         uploadedIpa = true;
       }

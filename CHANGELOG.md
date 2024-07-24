@@ -1,3 +1,6 @@
+## [1.0.4] - 2024-07-24
+- Add log
+
 ## [1.0.3] - 2024-07-24
 - Search ipa file when send ipa file.
 
