@@ -205,7 +205,8 @@ class BuildRunner {
         if (result.exitCode == 0) {
           final ipaFiles = result.stdout.toString().split('\n');
           if (ipaFiles.isNotEmpty) {
-            ipaName = ipaFiles.first;
+            ipaName =
+                ipaFiles.where((e) => e.endsWith('.ipa')).firstOrNull ?? '';
           }
         }
       });
