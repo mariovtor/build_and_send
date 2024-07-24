@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Dart & Flutter",
+        "request": "launch",
+        "type": "dart",
+        "program": "bin/build_and_send.dart",
+        "args": [
+          "-p", "android",
+          "-f", "dev",
+          "-v"
+        ]
+      }
+    ]
+  }
+  
