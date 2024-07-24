@@ -178,7 +178,7 @@ class BuildRunner {
       pod install
       cd ..
       ''';
-      await _runCommand(cleanCommand, progressMessage: 'Cleaning iOS');
+      await _runCommand(cleanCommand, progressMessage: 'Running Pod Sync');
     }
 
     await _runCommand(
