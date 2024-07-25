@@ -154,6 +154,7 @@ class BuildRunner {
   }
 
   Future<void> _buildIOS(FlavorConfig flavor) async {
+    if (!Platform.isMacOS) return;
     var buildArgs = flavor.ios.buildArgs ?? '';
     var buildMethod = flavor.method;
 

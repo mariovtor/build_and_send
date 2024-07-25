@@ -15,11 +15,8 @@ A Dart package for building artifacts, upload and sending them.
 Add `build_and_send` to your `pubspec.yaml` in the `dev_dependencies` section.:
 
 ```yaml
-dependencies:
-  ansi: ^0.4.2
-  args: ^2.5.0
-  http: '>=0.13.5 <2.0.0'
-  yaml: ^3.1.2
+dev_dependencies:
+  build_and_send: any
   ```
 
 ## Usage

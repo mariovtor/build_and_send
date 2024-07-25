@@ -1,5 +1,5 @@
-## 1.0.7
-- Update README.md
+## 1.0.8
+- Prevent ios build to macOs
 
 ## 1.0.5
 - Bug fixes
