@@ -58,8 +58,8 @@ build:
     bundle_path: null
     #if cloud not given will only build
     gcloud:
-      bucket: flavor1-bucket
-      app_id: flavor1-app-id
+      bucket: gcloud-bucket
+      app_id: app-id
   ios:
     #optional, if you need to pass any arguments to build command, like using a specific -t target, or shorebird configuration like --flutter-version or any other stuff
     build_args: 
@@ -121,6 +121,12 @@ APPLE_APP_SPECIFIC_PASSWORD=your_app_specific_password
 #remove if you dont want to use discord
 DISCORD_SENDER_ID=000000000000000
 ```
+
+
+### IOS Configuration
+`IOS_DEPLOY_EMAIL=your@email.com` is the email that will be used to deploy the app to TestFlight.
+`IOS_APP_SPECIFIC_PASSWORD=your_app_specific_password` is the app specific password that will be used to deploy the app to TestFlight. Can be set in https://appleid.apple.com/, "Specific App Passwords" section.
+
 
 ## Contributing
 
