@@ -1,18 +1,19 @@
-## [1.0.5]
+## 1.0.6
+- Update README.md
+
+## 1.0.5
 - Bug fixes
 
-## [1.0.3] 
+## 1.0.3
 - Search ipa file when send ipa file.
 
 
-## [1.0.2]
+## 1.0.2
 - Fix text when build ios ipa.
 
-## [1.0.1]
-### Fixed
+## 1.0.1
 - Bug fix.
 
 
 ## 1.0.0
-
 - Initial version.

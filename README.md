@@ -42,6 +42,7 @@ dart run build_and_send
 
 ## Configuration
 Create a build_config.yaml. This file contains the configuration for the build and send process.
+
 ### Example
 ```yaml
 build:
@@ -109,6 +110,9 @@ build:
 
 ##
 ### Create a  build.env file in the root of your project
+
+**Remember to add the `build.env` file to your `.gitignore` to prevent sensitive information from being committed to your repository.**
+
 ```env
 ACCOUNT_EMAIL=upload.to.gc@example.com
 FLAVOR1_UPLOAD_EMAIL=flavor1.permissions@example.com
