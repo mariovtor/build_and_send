@@ -48,7 +48,7 @@ class Starter {
       ..addFlag('no-pod-sync',
           help:
               'If you are having some issues with ios build, you can try manually sync pod files. This flag will skip pod install step')
-      ..addFlag('text', abbr: 't', help: 'Custom text to send in discord');
+      ..addOption('text', abbr: 't', help: 'Custom text to send in discord');
 
     final argResults = parser.parse(args);
 

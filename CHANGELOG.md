@@ -1,5 +1,9 @@
-## 1.0.9
-- Update readme
+
+
+## 1.0.10
+- Improve shorebird release
+- Improve verbose [-v] option
+- Fix text message [-t] option
 
 ## 1.0.8
 - Prevent ios build to macOs

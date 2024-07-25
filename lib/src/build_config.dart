@@ -71,7 +71,7 @@ class AndroidConfig {
     return AndroidConfig(
       buildArgs: yaml['build_args'],
       apkPath: yaml['apk_path'] ?? 'build/app/outputs/flutter-apk/',
-      bundlePath: yaml['bundle_path'] ?? 'build/outputs/bundle/',
+      bundlePath: yaml['bundle_path'] ?? 'build/app/outputs/bundle/release',
       apkName: yaml['apk_name'] ?? 'app-release.apk',
       bundleName: yaml['bundle_name'] ?? 'app-release.aab',
       gcloud:

@@ -110,7 +110,7 @@ class BuildRunner {
       command = 'fvm $command';
     } else if (buildMethod == 'shorebird') {
       command =
-          'shorebird release android --artifact apk $flavorArgs $buildArgs';
+          'yes | shorebird release android --artifact apk $flavorArgs $buildArgs';
     }
 
     await _runCommand(
@@ -167,7 +167,7 @@ class BuildRunner {
     if (buildMethod == 'fvm') {
       command = 'fvm $command';
     } else if (buildMethod == 'shorebird') {
-      command = 'shorebird release ios $targetArg $flavorArg';
+      command = 'yes | shorebird release ios $targetArg $flavorArg';
     }
 
     if (noPodSync) {
@@ -283,50 +283,65 @@ class BuildRunner {
     if (startMessage != null) {
       ConsolePrinter.writeWhite(startMessage);
     }
-    ProcessResult? result;
-    final workingDirectory = Directory.current.path;
-    if (progressMessage != null) {
-      await _printer.writeProgress(progressMessage, run: () async {
-        result = await Process.run(
+    Future<void> runCommand() async {
+      ProcessResult? result;
+      final workingDirectory = Directory.current.path;
+
+      Process? process;
+
+      try {
+        process = await Process.start(
           'sh',
           ['-c', command],
           runInShell: true,
           workingDirectory: workingDirectory,
         );
-      });
-      if (result != null) {
-        onRun?.call(result!);
-      }
-      if (result?.exitCode != 0) {
-        ConsolePrinter.writeError(errorMessage ?? 'Failed to run command:',
-            shouldExit: false);
+        final out = [];
+        process.stdout.listen((event) {
+          final text = stdout.encoding.decode(event);
+          out.add(text);
+          if (verbose) {
+            print(text);
+          }
+        });
+        final err = [];
+        process.stderr.listen((event) {
+          final text = stderr.encoding.decode(event);
+          err.add(text);
+          if (verbose) {
+            print(text);
+          }
+        });
+        final exitCode = await process.exitCode;
+        result = ProcessResult(
+          process.pid,
+          exitCode,
+          out.lastOrNull,
+          err.lastOrNull,
+        );
 
-        ConsolePrinter.writeError('\n$command\n', shouldExit: false);
-        ConsolePrinter.writeError('Error: ${result?.stderr}');
-      } else {
-        ConsolePrinter.writeGreen(
-            successMessage ?? 'Command completed successfully');
-      }
-    } else {
-      result = await Process.run(
-        'sh',
-        ['-c', command],
-        runInShell: true,
-        workingDirectory: workingDirectory,
-      );
-      onRun?.call(result);
-      if (result.exitCode != 0) {
+        if (exitCode < 0) {
+          throw Exception('Failed to run command: $command');
+        } else {
+          onRun?.call(result);
+          ConsolePrinter.writeGreen(
+              successMessage ?? 'Command completed successfully');
+        }
+      } catch (e) {
         ConsolePrinter.writeError(
             errorMessage ?? 'Failed to run command: $command');
-      } else {
-        ConsolePrinter.writeGreen(
-            successMessage ?? 'Command completed successfully');
+        ConsolePrinter.writeError('Error: $e');
+      } finally {
+        process?.kill();
       }
     }
 
-    if (verbose) {
-      print(result?.stdout);
-      print(result?.stderr);
+    if (progressMessage != null) {
+      await _printer.writeProgress(progressMessage, run: () async {
+        await runCommand();
+      });
+    } else {
+      await runCommand();
     }
   }
 
