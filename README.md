@@ -135,4 +135,4 @@ Any suggestions, issues, pull requests are welcomed.
 
 ## Credits
 
-* [mariovtor](https://github.com/westracer/fontify)
+* [mariovtor](https://github.com/mariovtor)

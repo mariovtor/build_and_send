@@ -1,3 +1,6 @@
+## 1.0.9
+- Update readme
+
 ## 1.0.8
 - Prevent ios build to macOs
 
