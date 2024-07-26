@@ -1,5 +1,6 @@
-## 1.0.11
+## 1.0.12
 - Update readme
+- Update discord message
 
 ## 1.0.10
 - Improve shorebird release

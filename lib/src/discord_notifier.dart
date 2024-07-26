@@ -40,19 +40,18 @@ class DiscordNotifier {
     }
   }
 
-  static String generateMessage({
+  String generateMessage({
     required String? flavorName,
     required String version,
     required String? apkUrl,
     required String? bundleUrl,
     required String sender,
-    required String? discordChannel,
     required bool uploadedIpa,
     String? customText,
   }) {
     var message = '';
-    if (discordChannel?.isNotEmpty == true) {
-      message += '<#$discordChannel> \n';
+    if (config.channelId?.isNotEmpty == true) {
+      message += '<#${config.channelId}> \n';
     }
     message += '**Version: $version**\n';
 

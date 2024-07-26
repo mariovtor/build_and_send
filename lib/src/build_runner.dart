@@ -80,14 +80,14 @@ class BuildRunner {
       final yaml = loadYaml(File('pubspec.yaml').readAsStringSync()) as Map;
 
       final sender = EnvLoader.get('DISCORD_SENDER_ID') ?? uploadAccount;
+
       final notifier = DiscordNotifier(config.discord!);
-      final message = DiscordNotifier.generateMessage(
+      final message = notifier.generateMessage(
         flavorName: flavorName,
         version: yaml['version'],
         apkUrl: apkUrl,
         bundleUrl: bundleUrl,
         sender: sender,
-        discordChannel: null,
         customText: customText,
         uploadedIpa: uploadedIpa,
       );
@@ -220,16 +220,18 @@ class BuildRunner {
 
     var uploadCommand =
         'xcrun altool --upload-app -f "build/ios/ipa/$ipaName" -t ios -u "$email" -p "$appSpecificPassword"';
-    await _runCommand(uploadCommand,
-        progressMessage: 'Uploading IPA to App Store Connect', onRun: (p0) {
-      if (p0.exitCode == 0) {
-        uploadedIpa = true;
-      }
-    });
+    await _runCommand(
+      uploadCommand,
+      progressMessage: 'Uploading IPA to App Store Connect',
+      onRun: (p0) {
+        if (p0.exitCode == 0) {
+          uploadedIpa = true;
+        }
+      },
+      successMessage: 'Uploaded IPA to App Store Connect',
+    );
 
-    if (uploadedIpa) {
-      ConsolePrinter.writeGreen('Uploaded IPA to App Store Connect');
-    } else {
+    if (!uploadedIpa) {
       ConsolePrinter.writeError('Failed to upload IPA to App Store Connect',
           shouldExit: false);
     }
@@ -261,11 +263,17 @@ class BuildRunner {
     }
 
     var command = 'gsutil cp $path$filename gs://$bucket/$appId/';
-    await _runCommand(command, progressMessage: 'Uploading $path$filename');
-    await _runCommand(
-        'gsutil acl ch -u AllUsers:R gs://$bucket/$appId/$filename');
+    await _runCommand(command,
+        progressMessage: 'Uploading $path$filename',
+        successMessage: 'Uploaded $filename',
+        errorMessage: 'Failed to upload $filename to gs://$bucket/$appId/');
     final url = 'https://storage.googleapis.com/$bucket/$appId/$filename';
-    ConsolePrinter.writeGreen('Uploaded $filename to $url');
+    await _runCommand(
+      'gsutil acl ch -u AllUsers:R gs://$bucket/$appId/$filename',
+      successMessage: 'File made public at \n$url',
+      errorMessage: 'Failed to make file public',
+    );
+
     return url;
   }
 
