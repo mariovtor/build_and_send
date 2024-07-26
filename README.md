@@ -92,17 +92,17 @@ build:
         #if not given will only build the ipa file, will search in build/ios/ipa
         ipa_name: null
     #optional, if given will send a message with android uploaded link
-    discord:
-      #required
-      webhook_url: YOUR_DISCORD_WEBHOOK_URL
-      #optional, will tag the channel in the message
-      channel_id: YOUR_DISCORD_CHANNEL_ID
-      #optional
-      mention_users: user1:123456789012345678,user2:987654321098765432
-      #default true
-      show_version: true
-      #default true
-      show_flavor: true
+discord:
+  #required
+  webhook_url: YOUR_DISCORD_WEBHOOK_URL
+  #optional, will tag the channel in the message
+  channel_id: YOUR_DISCORD_CHANNEL_ID
+  #optional
+  mention_users: user1:123456789012345678,user2:987654321098765432
+  #default true
+  show_version: true
+  #default true
+  show_flavor: true
 ```
 
 ##
