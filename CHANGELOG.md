@@ -1,3 +1,6 @@
+## 1.1.0
+- Add only-upload flag : if you because any reason, what to upload only, you can use this flag.
+
 ## 1.0.12
 - Update readme
 - Update discord message

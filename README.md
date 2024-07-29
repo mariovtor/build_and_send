@@ -33,6 +33,7 @@ dart run build_and_send
 - `-m, --mention`: Mention specific users in discord when sending notification. Provide comma separated names. If not provided, all users configured will be mentioned. see build_config.yaml, example for mentionUsers [command -m user1,user2], in .yaml file mentionUsers: user1:1234567890,user2:0987654321.
 - `-n, --no-mention`: Don't mention any user in discord when sending notification. If not provided, all users configured will be mentioned.
 - `--no-pod-sync'`: If you are having some issues with ios build, you can try manually sync pod files. This flag will skip pod install step.
+- `--only-upload` : If you want to upload only, you can use this flag. Generaly if want to upload a previous build.
 - `-v, --verbose` : Verbose mode. Will print more information.
 - `-h, --help` : Display help information.
 

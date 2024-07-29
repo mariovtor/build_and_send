@@ -20,6 +20,7 @@ class BuildRunner {
   final bool verbose;
   final String? customText;
   final bool noPodSync;
+  final bool onlyUpload;
 
   BuildRunner({
     required this.config,
@@ -31,6 +32,7 @@ class BuildRunner {
     this.mentionNames,
     this.verbose = false,
     this.noPodSync = true,
+    this.onlyUpload = false,
   });
 
   String bundleUrl = '';
@@ -112,15 +114,15 @@ class BuildRunner {
       command =
           'yes | shorebird release android --artifact apk $flavorArgs $buildArgs';
     }
-
-    await _runCommand(
-      command,
-      progressMessage: 'Building APK',
-      successMessage: 'APK built successfully',
-      errorMessage: 'Failed to build APK',
-      startMessage: 'Started building APK \n $command',
-    );
-
+    if (!onlyUpload) {
+      await _runCommand(
+        command,
+        progressMessage: 'Building APK',
+        successMessage: 'APK built successfully',
+        errorMessage: 'Failed to build APK',
+        startMessage: 'Started building APK \n $command',
+      );
+    }
     if (flavor.android.gcloud != null) {
       apkUrl = await _uploadToGCloud(
         flavor.android.gcloud!,
@@ -137,7 +139,7 @@ class BuildRunner {
       command = '';
       // command = 'shorebird build appbundle $buildArgs';
     }
-    if (command.isNotEmpty) {
+    if (command.isNotEmpty && !onlyUpload) {
       await _runCommand(
         command,
         progressMessage: 'Building Bundle',
@@ -158,20 +160,21 @@ class BuildRunner {
     var buildArgs = flavor.ios.buildArgs ?? '';
     var buildMethod = flavor.method;
 
-    var flavorArg = flavorName != null ? '--flavor $flavorName' : '';
-    var targetArg =
-        flavorName != null ? '--target lib/main_$flavorName.dart' : '';
+    if (!onlyUpload) {
+      var flavorArg = flavorName != null ? '--flavor $flavorName' : '';
+      var targetArg =
+          flavorName != null ? '--target lib/main_$flavorName.dart' : '';
 
-    String command =
-        'flutter build ipa --release $flavorArg $targetArg $buildArgs';
-    if (buildMethod == 'fvm') {
-      command = 'fvm $command';
-    } else if (buildMethod == 'shorebird') {
-      command = 'yes | shorebird release ios $targetArg $flavorArg';
-    }
+      String command =
+          'flutter build ipa --release $flavorArg $targetArg $buildArgs';
+      if (buildMethod == 'fvm') {
+        command = 'fvm $command';
+      } else if (buildMethod == 'shorebird') {
+        command = 'yes | shorebird release ios $targetArg $flavorArg';
+      }
 
-    if (noPodSync) {
-      String cleanCommand = '''
+      if (noPodSync) {
+        String cleanCommand = '''
       cd ios
       pod deintegrate
       rm Podfile.lock
@@ -179,15 +182,15 @@ class BuildRunner {
       pod install
       cd ..
       ''';
-      await _runCommand(cleanCommand, progressMessage: 'Running Pod Sync');
+        await _runCommand(cleanCommand, progressMessage: 'Running Pod Sync');
+      }
+
+      await _runCommand(
+        command,
+        startMessage: 'Started building IPA',
+        progressMessage: 'Building IPA',
+      );
     }
-
-    await _runCommand(
-      command,
-      startMessage: 'Started building IPA',
-      progressMessage: 'Building IPA',
-    );
-
     var email = EnvLoader.get('APPLE_EMAIL');
     var appSpecificPassword = EnvLoader.get('APPLE_APP_SPECIFIC_PASSWORD');
     if (email?.isNotEmpty != true || appSpecificPassword?.isNotEmpty != true) {

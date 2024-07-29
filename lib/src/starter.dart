@@ -45,6 +45,9 @@ class Starter {
       ..addFlag('verbose',
           abbr: 'v', help: 'Verbose mode. Will print all logs to console')
       ..addFlag('help', abbr: 'h', negatable: false)
+      ..addFlag('only-upload',
+          help:
+              'Only upload ipa (if ios) or apk (if android) or both (if -p not provided), ipa to testflight and apk/bundle to gcloud')
       ..addFlag('no-pod-sync',
           help:
               'If you are having some issues with ios build, you can try manually sync pod files. This flag will skip pod install step')
@@ -66,6 +69,7 @@ class Starter {
     final verbose = argResults['verbose'];
     final customText = (argResults['text'] ?? '').toString();
     final noPodSync = argResults.wasParsed('no-pod-sync') ? false : true;
+    final onlyUpload = argResults.wasParsed('only-upload') ? true : false;
 
     EnvLoader.load(envFile);
     final config = BuildConfig.load(buildConfigFile);
@@ -80,6 +84,7 @@ class Starter {
       verbose: verbose,
       customText: customText,
       noPodSync: noPodSync,
+      onlyUpload: onlyUpload,
     );
 
     await runner.run();
