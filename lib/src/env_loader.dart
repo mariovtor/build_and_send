@@ -4,6 +4,9 @@ import 'dart:io';
 
 import 'package:build_and_send/src/constants.dart';
 
+/// Load environment variables from a file
+/// This class will load environment variables from a file
+/// and store them in a map
 class EnvLoader {
   static final Map<String, String> environment = {};
 
@@ -30,6 +33,9 @@ class EnvLoader {
     }
   }
 
+  /// Get the value of an environment variable
+  /// This method will return the value of an environment variable
+  /// if it exists, otherwise it will return null
   static String? get(String key) {
     return environment[key];
   }

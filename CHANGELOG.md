@@ -1,3 +1,5 @@
+## 1.1.1
+- Update doc
 ## 1.1.0
 - Add only-upload flag : if you because any reason, what to upload only, you can use this flag.
 

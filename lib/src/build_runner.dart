@@ -10,16 +10,53 @@ import 'env_loader.dart';
 
 final _printer = ConsolePrinter.slashes();
 
+/// Class to run the build process
 class BuildRunner {
+  /// Build configuration
   final BuildConfig config;
+
+  /// Platform to build
+  /// This can be 'ios', 'android' or 'all'
   final String platform;
+
+  /// Flavor name
+  /// If provided, this will build the custom flavor
   final String? flavorName;
+
+  /// Silent mode
+  /// If true, no notification will be sent to discord
   final bool silent;
+
+  /// No mention
+  /// If true, no user will be mentioned in discord
   final bool noMention;
+
+  /// Mention names
+  /// Names of the users to mention in discord
+  /// If not provided, all users will be mentioned
+  /// This will only work if noMention is false
+  /// If noMention is true, this will be ignored
+  /// User should pass names acording in build_config.yaml file in discord: mention_users
   final List<String>? mentionNames;
+
+  /// Verbose mode
+  /// If true, all logs will be printed to console
   final bool verbose;
+
+  /// Custom text
+  /// Custom text to send in discord
+  /// This will be sent along with the build details
   final String? customText;
+
+  /// No pod sync
+  /// If true, pod sync will be skipped
+  /// This will only work for ios builds
+  /// If you are having some issues with ios build, you can try manually sync pod files
   final bool noPodSync;
+
+  /// Only upload
+  /// If true, only the build artifacts will be uploaded
+  /// This will not build the app
   final bool onlyUpload;
 
   BuildRunner({
@@ -39,6 +76,8 @@ class BuildRunner {
   String apkUrl = '';
   String uploadAccount = '';
   bool uploadedIpa = false;
+
+  /// Run the build process
   Future<void> run() async {
     final usingCustomFlavor =
         flavorName != null && config.flavors.containsKey(flavorName);
@@ -98,6 +137,7 @@ class BuildRunner {
     }
   }
 
+  /// Build the android app
   Future<void> _buildAndroid(FlavorConfig flavor) async {
     final flavorArgs = flavorName != null ? '--flavor $flavorName' : '';
     var buildArgs = flavor.android.buildArgs ?? '';
@@ -155,6 +195,14 @@ class BuildRunner {
     }
   }
 
+  ///
+  /// Build the ios app
+  /// This method will build the ios app
+  /// [flavor] Flavor configuration
+  /// Returns a future
+  /// Throws an error if the build fails
+  /// If the build is successful, it will upload the IPA to App Store Connect
+  ///
   Future<void> _buildIOS(FlavorConfig flavor) async {
     if (!Platform.isMacOS) return;
     var buildArgs = flavor.ios.buildArgs ?? '';
@@ -240,6 +288,12 @@ class BuildRunner {
     }
   }
 
+  /// Upload file to GCloud
+  /// This method will upload a file to GCloud
+  /// [gcloud] GCloud configuration
+  /// [path] Path to the file
+  /// [filename] Name of the file
+  /// Returns the URL of the uploaded file
   Future<String> _uploadToGCloud(
     GCloudConfig gcloud, {
     required String path,
@@ -280,6 +334,17 @@ class BuildRunner {
     return url;
   }
 
+  /// Run a command
+  /// This method will run a command in the terminal
+  /// and print the output to the console
+  /// [command] Command to run
+  /// [startMessage] Message to print before starting the command
+  /// [errorMessage] Message to print if the command fails
+  /// [successMessage] Message to print if the command is successful
+  /// [progressMessage] Message to print while the command is running
+  /// [onRun] Function to run after the command is run
+  /// Returns a future
+  /// Throws an error if the command fails
   Future<void> _runCommand(
     String command, {
     String? startMessage,
@@ -356,6 +421,11 @@ class BuildRunner {
     }
   }
 
+  /// Set gcloud configurations
+  /// This method will get the current gcloud authenticated account then
+  /// if the current account does not match the required account, it will
+  /// authenticate with the required account
+  /// Then it will set the project id to the required project id
   Future<void> setGCloudConfigs(String appId) async {
     if (uploadAccount.isEmpty) {
       ConsolePrinter.writeWhite('No upload account provided');

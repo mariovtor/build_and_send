@@ -6,7 +6,10 @@ import 'package:build_and_send/src/build_runner.dart';
 import 'package:build_and_send/src/constants.dart';
 import 'package:build_and_send/src/env_loader.dart';
 
+/// Starter class to start the build process
+/// This class will parse the arguments and start the build process
 class Starter {
+  /// Start the build process
   static Future<void> start(List<String> args) async {
     final parser = ArgParser()
       ..addOption(
