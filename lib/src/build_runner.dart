@@ -218,7 +218,8 @@ class BuildRunner {
       if (buildMethod == 'fvm') {
         command = 'fvm $command';
       } else if (buildMethod == 'shorebird') {
-        command = 'yes | shorebird release ios $targetArg $flavorArg';
+        command =
+            'yes | shorebird release ios $targetArg $flavorArg $buildArgs';
       }
 
       if (noPodSync) {

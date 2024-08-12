@@ -1,3 +1,5 @@
+## 1.1.2
+- fix ios build args
 ## 1.1.1
 - Update doc
 ## 1.1.0
