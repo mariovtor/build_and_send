@@ -1,3 +1,5 @@
+## 1.1.3
+- fix shorebird release
 ## 1.1.2
 - fix ios build args
 ## 1.1.1
