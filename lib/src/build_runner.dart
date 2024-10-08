@@ -152,7 +152,7 @@ class BuildRunner {
       command = 'fvm $command';
     } else if (buildMethod == 'shorebird') {
       command =
-          'yes | shorebird release android --artifact apk $flavorArgs $buildArgs';
+          'yes | shorebird release android --artifact=apk $flavorArgs $buildArgs';
     }
     if (!onlyUpload) {
       await _runCommand(
