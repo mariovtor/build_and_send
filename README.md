@@ -34,8 +34,49 @@ dart run build_and_send
 - `-n, --no-mention`: Don't mention any user in discord when sending notification. If not provided, all users configured will be mentioned.
 - `--no-pod-sync'`: If you are having some issues with ios build, you can try manually sync pod files. This flag will skip pod install step.
 - `--only-upload` : If you want to upload only, you can use this flag. Generaly if want to upload a previous build.
-- `-v, --verbose` : Verbose mode. Will print more information.
+- `-v, --verbose` : Verbose mode. Provides comprehensive logging with color-coded sections, step-by-step progress tracking, configuration visibility, and detailed debug information throughout the build process.
 - `-h, --help` : Display help information.
+
+## Verbose Logging
+
+The `--verbose` or `-v` flag enables comprehensive logging that provides deep insight into the build process:
+
+### Example Verbose Output
+```
+━━━ Starting: Build and Send - Initialization ━━━
+[CONFIG] Platform: android
+[CONFIG] Flavor: dev
+[CONFIG] Build method: fvm
+[CONFIG] Verbose mode: true
+  → Validating input arguments
+[SUCCESS] Input validation passed
+  → Loading environment and configuration
+[DEBUG] Environment loaded from build.env
+[DEBUG] Configuration loaded from build_config.yaml
+━━━ Completed: Build and Send - Initialization ━━━
+
+━━━ Starting: Android Build ━━━
+[DEBUG] Build method: fvm
+[DEBUG] Only upload: false
+  → Building APK and Bundle
+[STEP] Building APK
+[COMMAND] fvm flutter build apk --flavor dev -t lib/main_dev.dart
+[SUCCESS] APK built successfully
+[STEP] Building App Bundle
+[COMMAND] fvm flutter build appbundle --flavor dev -t lib/main_dev.dart
+[SUCCESS] Bundle built successfully
+━━━ Completed: Android Build ━━━
+```
+
+### Logging Features
+- **🎯 Hierarchical sections** with clear boundaries
+- **⚙️ Configuration visibility** showing all build parameters
+- **📊 Step-by-step tracking** with progress indicators
+- **🎨 Color-coded messages** for different types of information
+- **🔍 Debug information** showing internal state and file operations
+- **📝 Command logging** displaying all executed shell commands
+
+Use verbose mode for debugging build issues or understanding the complete build workflow.
 
 
 ## Configuration

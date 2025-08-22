@@ -1,8 +1,15 @@
 library build_and_send;
 
 import 'dart:io';
+
+import 'package:build_and_send/src/builders/build_service.dart';
+import 'package:build_and_send/src/builders/builder.dart';
 import 'package:build_and_send/src/console_printer.dart';
-import 'package:build_and_send/src/discord_notifier.dart';
+import 'package:build_and_send/src/logger.dart';
+import 'package:build_and_send/src/notifiers/notification_service.dart';
+import 'package:build_and_send/src/notifiers/notifier.dart';
+import 'package:build_and_send/src/uploaders/upload_service.dart';
+import 'package:build_and_send/src/uploaders/uploader.dart';
 import 'package:yaml/yaml.dart';
 
 import 'build_config.dart';
@@ -79,8 +86,11 @@ class BuildRunner {
 
   /// Run the build process
   Future<void> run() async {
+    Logger.info('Starting build runner with platform: $platform');
     final usingCustomFlavor =
         flavorName != null && config.flavors.containsKey(flavorName);
+    Logger.config('Using custom flavor', usingCustomFlavor);
+    Logger.config('Flavor name', flavorName ?? 'default');
     var flavor = usingCustomFlavor
         ? config.flavors[flavorName!]
         : FlavorConfig(
@@ -101,147 +111,172 @@ class BuildRunner {
       }
     }
 
+    Logger.step('Determining build targets');
     if (platform == 'ios' || platform == 'all') {
-      await _buildIOS(flavor!);
+      Logger.info('iOS build target selected');
+      await _buildIOSWithNewService(flavor!);
     }
     if (platform == 'android' || platform == 'all') {
-      await _buildAndroid(flavor!);
+      Logger.info('Android build target selected');
+      await _buildAndroidWithNewService(flavor!);
     }
 
+    Logger.startSection('Post-build Processing');
     if (config.discord?.webhookUrl.isNotEmpty != true) {
+      Logger.info('Discord notifications disabled or not configured');
+      Logger.endSection('no notifications');
       return;
     }
 
-    if (!silent && config.discord!.webhookUrl.isNotEmpty) {
+    if (!silent && config.discord?.webhookUrl.isNotEmpty == true) {
+      Logger.step('Preparing Discord notification');
       if (bundleUrl.isEmpty && apkUrl.isEmpty && uploadedIpa == false) {
+        Logger.warning('No build artifacts found to send to Discord');
         ConsolePrinter.writeError(
             'No build artifacts found to send to Discord');
         return;
       }
       final yaml = loadYaml(File('pubspec.yaml').readAsStringSync()) as Map;
-
       final sender = EnvLoader.get('DISCORD_SENDER_ID') ?? uploadAccount;
+      Logger.config('Discord sender', sender);
+      Logger.config('App version', yaml['version']);
 
-      final notifier = DiscordNotifier(config.discord!);
-      final message = notifier.generateMessage(
-        flavorName: flavorName,
-        version: yaml['version'],
-        apkUrl: apkUrl,
-        bundleUrl: bundleUrl,
-        sender: sender,
-        customText: customText,
-        uploadedIpa: uploadedIpa,
-      );
-      await notifier.notify(message,
-          mention: !noMention, mentionNames: mentionNames);
+      // Use new notification service
+      Logger.step('Creating notification service');
+      final notifier = NotificationService.create(config);
+      if (notifier != null) {
+        Logger.debug('Creating notification context');
+        final context = NotificationContext(
+          flavorName: flavorName,
+          version: yaml['version'],
+          apkUrl: apkUrl,
+          bundleUrl: bundleUrl,
+          sender: sender,
+          uploadedIpa: uploadedIpa,
+          customText: customText,
+          mention: !noMention,
+          mentionNames: mentionNames,
+        );
+        await notifier.notify(context);
+      }
     }
   }
 
-  /// Build the android app
-  Future<void> _buildAndroid(FlavorConfig flavor) async {
-    final flavorArgs = flavorName != null ? '--flavor $flavorName' : '';
-    var buildArgs = flavor.android.buildArgs ?? '';
-    var buildMethod = flavor.method;
+  /// Build Android using new AndroidBuilder service
+  Future<void> _buildAndroidWithNewService(FlavorConfig flavor) async {
+    Logger.startSection('Android Build Process');
+    Logger.config('Android build args', flavor.android.buildArgs ?? 'none');
+    Logger.config('APK path', flavor.android.apkPath);
+    Logger.config('Bundle path', flavor.android.bundlePath);
 
+    // Use new AndroidBuilder
+    Logger.step('Creating Android builder');
+    final builder = BuildService.createAndroidBuilder(
+      flavor: flavor,
+      verbose: verbose,
+    );
+
+    Logger.step('Preparing build context');
+    final buildContext = BuildContext(
+      flavorName: flavorName,
+      platform: 'android',
+      buildArgs: flavor.android.buildArgs ?? '',
+      onlyUpload: onlyUpload,
+    );
+
+    Logger.step('Executing Android build');
+    final result = await builder.build(buildContext);
+    if (!result.success) {
+      Logger.error('Android build failed: ${result.error}');
+      ConsolePrinter.writeError('Android build failed: ${result.error}');
+      return;
+    }
+    Logger.success('Android build completed successfully');
+
+    // Handle uploads using existing upload service
     if (flavor.android.gcloud != null) {
-      await setGCloudConfigs(flavor.android.gcloud!.appId);
-    }
-
-    var command = 'flutter build apk $flavorArgs $buildArgs';
-    if (buildMethod == 'fvm') {
-      command = 'fvm $command';
-    } else if (buildMethod == 'shorebird') {
-      command =
-          'yes | shorebird release android --artifact=apk $flavorArgs $buildArgs';
-    }
-    if (!onlyUpload) {
-      await _runCommand(
-        command,
-        progressMessage: 'Building APK',
-        successMessage: 'APK built successfully',
-        errorMessage: 'Failed to build APK',
-        startMessage: 'Started building APK \n $command',
+      Logger.step('Preparing uploads to GCloud');
+      Logger.config('Upload account', uploadAccount);
+      final uploader = UploadService.create(
+        config: config,
+        uploadAccount: uploadAccount,
+        verbose: verbose,
       );
-    }
-    if (flavor.android.gcloud != null) {
-      apkUrl = await _uploadToGCloud(
-        flavor.android.gcloud!,
-        path: flavor.android.apkPath,
-        filename: flavor.android.apkName,
-      );
-    }
+      if (uploader != null) {
+        Logger.step('Uploading APK');
+        apkUrl = await uploader.upload(
+          UploadContext(
+            filePath: flavor.android.apkPath,
+            fileName: flavor.android.apkName,
+          ),
+        );
+        Logger.debug('APK upload completed, URL: $apkUrl');
 
-    command = 'flutter build appbundle $flavorArgs $buildArgs';
-    if (buildMethod == 'fvm') {
-      command = 'fvm $command';
-    } else if (buildMethod == 'shorebird') {
-      ///if shorebird is used, bundle was already built in the previous command
-      command = '';
-      // command = 'shorebird build appbundle $buildArgs';
+        Logger.step('Uploading Bundle');
+        bundleUrl = await uploader.upload(
+          UploadContext(
+            filePath: flavor.android.bundlePath,
+            fileName: flavor.android.bundleName,
+          ),
+        );
+        Logger.debug('Bundle upload completed, URL: $bundleUrl');
+      } else {
+        Logger.warning('No uploader available for GCloud');
+      }
+    } else {
+      Logger.info('No GCloud configuration found, skipping uploads');
     }
-    if (command.isNotEmpty && !onlyUpload) {
-      await _runCommand(
-        command,
-        progressMessage: 'Building Bundle',
-        successMessage: 'Bundle built successfully',
-        errorMessage: 'Failed to build Bundle',
-        startMessage: 'Started building Bundle \n $command',
-      );
-    }
-
-    if (flavor.android.gcloud != null) {
-      bundleUrl = await _uploadToGCloud(flavor.android.gcloud!,
-          path: flavor.android.bundlePath, filename: flavor.android.bundleName);
-    }
+    Logger.endSection('Android build process completed');
   }
 
-  ///
-  /// Build the ios app
-  /// This method will build the ios app
-  /// [flavor] Flavor configuration
-  /// Returns a future
-  /// Throws an error if the build fails
-  /// If the build is successful, it will upload the IPA to App Store Connect
-  ///
-  Future<void> _buildIOS(FlavorConfig flavor) async {
-    if (!Platform.isMacOS) return;
-    var buildArgs = flavor.ios.buildArgs ?? '';
-    var buildMethod = flavor.method;
-
-    if (!onlyUpload) {
-      var flavorArg = flavorName != null ? '--flavor $flavorName' : '';
-      var targetArg =
-          flavorName != null ? '--target lib/main_$flavorName.dart' : '';
-
-      String command =
-          'flutter build ipa --release $flavorArg $targetArg $buildArgs';
-      if (buildMethod == 'fvm') {
-        command = 'fvm $command';
-      } else if (buildMethod == 'shorebird') {
-        command =
-            'yes | shorebird release ios $targetArg $flavorArg $buildArgs';
-      }
-
-      if (noPodSync) {
-        String cleanCommand = '''
-      cd ios
-      pod deintegrate
-      rm Podfile.lock
-      rm -rf .symlinks
-      pod install
-      cd ..
-      ''';
-        await _runCommand(cleanCommand, progressMessage: 'Running Pod Sync');
-      }
-
-      await _runCommand(
-        command,
-        startMessage: 'Started building IPA',
-        progressMessage: 'Building IPA',
-      );
+  /// Build iOS using new IOSBuilder service
+  Future<void> _buildIOSWithNewService(FlavorConfig flavor) async {
+    if (!Platform.isMacOS) {
+      Logger.warning('iOS builds are only supported on macOS, skipping');
+      return;
     }
+
+    Logger.startSection('iOS Build Process');
+    Logger.config('iOS build args', flavor.ios.buildArgs ?? 'none');
+    Logger.config('IPA name', flavor.ios.ipaName ?? 'default');
+    Logger.config('No pod sync', noPodSync);
+
+    // Use new IOSBuilder
+    Logger.step('Creating iOS builder');
+    final builder = BuildService.createIOSBuilder(
+      flavor: flavor,
+      noPodSync: noPodSync,
+      verbose: verbose,
+    );
+
+    Logger.step('Preparing build context');
+    final buildContext = BuildContext(
+      flavorName: flavorName,
+      platform: 'ios',
+      buildArgs: flavor.ios.buildArgs ?? '',
+      onlyUpload: onlyUpload,
+    );
+
+    Logger.step('Executing iOS build');
+    final result = await builder.build(buildContext);
+    if (!result.success) {
+      Logger.error('iOS build failed: ${result.error}');
+      ConsolePrinter.writeError('iOS build failed: ${result.error}');
+      return;
+    }
+    Logger.success('iOS build completed successfully');
+
+    // Handle TestFlight upload (keep existing logic for now)
+    Logger.step('Preparing TestFlight upload');
+    await _uploadToTestFlight(flavor);
+    Logger.endSection('iOS build process completed');
+  }
+
+  /// Upload IPA to TestFlight (extracted from original _buildIOS)
+  Future<void> _uploadToTestFlight(FlavorConfig flavor) async {
     var email = EnvLoader.get('APPLE_EMAIL');
     var appSpecificPassword = EnvLoader.get('APPLE_APP_SPECIFIC_PASSWORD');
+
     if (email?.isNotEmpty != true || appSpecificPassword?.isNotEmpty != true) {
       ConsolePrinter.writeWhite(
           'Apple email or app specific password not provided');
@@ -249,6 +284,7 @@ class BuildRunner {
           'Build completed successfully but IPA was not uploaded');
       return;
     }
+
     String ipaName = flavor.ios.ipaName ?? '';
 
     if (ipaName.isEmpty) {
@@ -264,6 +300,7 @@ class BuildRunner {
         }
       });
     }
+
     if (!File('build/ios/ipa/$ipaName').existsSync()) {
       ConsolePrinter.writeError('No IPA file found in build/ios/ipa',
           shouldExit: false);
@@ -287,52 +324,6 @@ class BuildRunner {
       ConsolePrinter.writeError('Failed to upload IPA to App Store Connect',
           shouldExit: false);
     }
-  }
-
-  /// Upload file to GCloud
-  /// This method will upload a file to GCloud
-  /// [gcloud] GCloud configuration
-  /// [path] Path to the file
-  /// [filename] Name of the file
-  /// Returns the URL of the uploaded file
-  Future<String> _uploadToGCloud(
-    GCloudConfig gcloud, {
-    required String path,
-    required String filename,
-  }) async {
-    if (uploadAccount.isEmpty) {
-      ConsolePrinter.writeWhite(
-          'Skipping upload to GCloud, no upload account provided');
-      return '';
-    }
-
-    var bucket = gcloud.bucket;
-    var appId = gcloud.appId;
-
-    if (!path.endsWith('/')) {
-      path = '$path/';
-    }
-
-    ///check if file exists
-    if (!File('$path$filename').existsSync()) {
-      ConsolePrinter.writeError('File $path$filename does not exist',
-          shouldExit: false);
-      return '';
-    }
-
-    var command = 'gsutil cp $path$filename gs://$bucket/$appId/';
-    await _runCommand(command,
-        progressMessage: 'Uploading $path$filename',
-        successMessage: 'Uploaded $filename',
-        errorMessage: 'Failed to upload $filename to gs://$bucket/$appId/');
-    final url = 'https://storage.googleapis.com/$bucket/$appId/$filename';
-    await _runCommand(
-      'gsutil acl ch -u AllUsers:R gs://$bucket/$appId/$filename',
-      successMessage: 'File made public at \n$url',
-      errorMessage: 'Failed to make file public',
-    );
-
-    return url;
   }
 
   /// Run a command
@@ -420,38 +411,5 @@ class BuildRunner {
     } else {
       await runCommand();
     }
-  }
-
-  /// Set gcloud configurations
-  /// This method will get the current gcloud authenticated account then
-  /// if the current account does not match the required account, it will
-  /// authenticate with the required account
-  /// Then it will set the project id to the required project id
-  Future<void> setGCloudConfigs(String appId) async {
-    if (uploadAccount.isEmpty) {
-      ConsolePrinter.writeWhite('No upload account provided');
-      return;
-    }
-
-    String loggedUploadAccount = '';
-
-    ///get current gcloud authenticated account
-    await _runCommand('gcloud config get-value account', onRun: (r) {
-      if (r.exitCode == 0) {
-        loggedUploadAccount = r.stdout.toString().trim();
-      }
-    });
-
-    if (loggedUploadAccount != uploadAccount) {
-      ConsolePrinter.writeWhite(
-          ' The current authenticated account ($loggedUploadAccount) does not match the required account ($uploadAccount). Please authenticate with the correct account');
-      await Future.delayed(Duration(seconds: 2));
-
-      ///set account to gcloud
-      await _runCommand('gcloud auth login $uploadAccount');
-    }
-
-    ///set project id and account to gcloud
-    await _runCommand('gcloud config set project $appId');
   }
 }

@@ -1,0 +1,25 @@
+# Simple build config for testing
+build:
+  method: default
+  android:
+    apk_path: build/app/outputs/flutter-apk/
+    bundle_path: build/app/outputs/bundle/release
+    apk_name: app-release.apk
+    bundle_name: app-release.aab
+    gcloud:
+      bucket: test-bucket
+      app_id: com.example.app
+  ios:
+    ipa_name: Runner.ipa
+  flavors:
+    dev:
+      method: default
+      android:
+        apk_name: app-dev-release.apk
+        bundle_name: app-dev-release.aab
+      ios: {}
+
+discord:
+  webhook_url: https://discord.com/api/webhooks/123456789/abcdef
+  show_version: true
+  show_flavor: true

@@ -1,0 +1,6 @@
+build:
+  method: default
+  android:
+    build_args: null
+    apk_path: build/app/outputs/flutter-apk/app-release.apk
+    bundle_path: build/app/outputs/bundle/release/app-release.aab

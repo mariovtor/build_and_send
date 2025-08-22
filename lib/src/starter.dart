@@ -3,8 +3,12 @@ library build_and_send;
 import 'package:args/args.dart';
 import 'package:build_and_send/src/build_config.dart';
 import 'package:build_and_send/src/build_runner.dart';
+import 'package:build_and_send/src/console_printer.dart';
 import 'package:build_and_send/src/constants.dart';
 import 'package:build_and_send/src/env_loader.dart';
+import 'package:build_and_send/src/logger.dart';
+import 'package:build_and_send/src/validation/config_validator.dart';
+import 'package:build_and_send/src/validation/input_validator.dart';
 
 /// Starter class to start the build process
 /// This class will parse the arguments and start the build process
@@ -74,9 +78,57 @@ class Starter {
     final noPodSync = argResults.wasParsed('no-pod-sync') ? false : true;
     final onlyUpload = argResults.wasParsed('only-upload') ? true : false;
 
-    EnvLoader.load(envFile);
-    final config = BuildConfig.load(buildConfigFile);
+    // Initialize logger with verbose mode
+    Logger.init(verbose: verbose);
+    Logger.startSection('Build and Send - Initialization');
+    Logger.config('Platform', platform);
+    Logger.config('Flavor', flavor ?? 'default');
+    Logger.config('Silent mode', silent);
+    Logger.config('No mention', noMention);
+    Logger.config('Mention users', mention?.join(', ') ?? 'none');
+    Logger.config('Verbose mode', verbose);
+    Logger.config('Custom text', customText.isNotEmpty ? customText : 'none');
+    Logger.config('No pod sync', noPodSync);
+    Logger.config('Only upload', onlyUpload);
 
+    // Validate input arguments
+    Logger.step('Validating input arguments');
+    try {
+      InputValidator.validatePlatform(platform);
+      InputValidator.validateFlavorName(flavor);
+      InputValidator.validateMentionNames(mention);
+      InputValidator.validateCustomText(customText);
+      Logger.success('Input validation passed');
+    } on ValidationException catch (e) {
+      Logger.error('Input validation failed: ${e.message}');
+      ConsolePrinter.writeError('Input validation failed: ${e.message}',
+          shouldExit: true);
+      return;
+    }
+
+    Logger.step('Loading environment and configuration');
+    EnvLoader.load(envFile);
+    Logger.debug('Environment loaded from $envFile');
+    final config = BuildConfig.load(buildConfigFile);
+    Logger.debug('Configuration loaded from $buildConfigFile');
+
+    // Validate and sanitize configuration
+    Logger.step('Validating build configuration');
+    try {
+      ConfigValidator.validateBuildConfig(config);
+      Logger.success('Configuration validation passed');
+      // Note: We could sanitize config here but it might change behavior
+      // For now we just validate and let the original config through
+    } on ValidationException catch (e) {
+      Logger.error('Configuration validation failed: ${e.message}');
+      ConsolePrinter.writeError('Configuration validation failed: ${e.message}',
+          shouldExit: true);
+      return;
+    }
+
+    Logger.endSection('initialization complete');
+    Logger.startSection('Build Runner Setup');
+    Logger.info('Creating BuildRunner instance');
     final runner = BuildRunner(
       config: config,
       platform: platform,
@@ -90,6 +142,9 @@ class Starter {
       onlyUpload: onlyUpload,
     );
 
+    Logger.endSection();
+    Logger.startSection('Build Process Execution');
     await runner.run();
+    Logger.endSection('build process completed');
   }
 }

@@ -67,6 +67,16 @@ class ConsolePrinter {
     stdout.writeln(ansi.white(message));
   }
 
+  /// Write a blue message to the console
+  static void writeBlue(String message) {
+    stdout.writeln(ansi.blue(message));
+  }
+
+  /// Write a yellow message to the console
+  static void writeYellow(String message) {
+    stdout.writeln(ansi.yellow(message));
+  }
+
   /// Write a progress message to the console
   /// This method will write a progress message to the console
   /// with different progressers

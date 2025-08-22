@@ -1,3 +1,14 @@
+## 1.1.4
+- **Major enhancement**: Comprehensive verbose logging system
+  - Hierarchical section logging with clear boundaries
+  - Color-coded status messages ([CONFIG], [DEBUG], [SUCCESS], [WARNING], [ERROR])
+  - Step-by-step progress tracking with visual indicators
+  - Complete configuration visibility in verbose mode
+  - Command execution logging for transparency
+  - Integrated throughout all services (builders, uploaders, notifiers)
+- Enhanced ConsolePrinter with additional color methods
+- Improved debugging experience with detailed internal state visibility
+
 ## 1.1.3
 - fix shorebird release
 ## 1.1.2
